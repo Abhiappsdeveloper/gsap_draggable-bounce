@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Draggable bounce</title>
+    <style>
+        body {
+            background: #0e100f;
+            font-family: sans-serif;
+            color: #7c7c6f;
+            overflow: hidden;
+        }
+
+        .ball {
+            width: 125px;
+            height: 125px;
+            border-radius: 50%;
+            box-sizing: border-box;
+            will-change: transform;
+            position: absolute;
+        }
+    </style>
+
+</head>
+
+<body>
+    <img class="ball" src="https://assets.codepen.io/16327/circle.png" alt="" />
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/gsap-latest-beta.min.js'></script>
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/Draggable3.min.js'></script>
+    <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/InertiaPlugin.min.js'></script>
+    <script>
+        //original by Blake Bowen https://codepen.io/osublake/
+        console.clear();
+
+        const friction = -0.5;
+
+        const ball = document.querySelector(".ball");
+        const ballProps = gsap.getProperty(ball);
+        const radius = ball.getBoundingClientRect().width / 2;
+        const tracker = InertiaPlugin.track(ball, "x,y")[0];
+
+        let vw = window.innerWidth;
+        let vh = window.innerHeight;
+
+        gsap.defaults({
+            overwrite: true
+        });
+
+        gsap.set(ball, {
+            xPercent: -50,
+            yPercent: -50,
+            x: vw / 2,
+            y: vh / 2
+        });
+
+        const draggable = new Draggable(ball, {
+            bounds: window,
+            onPress() {
+                gsap.killTweensOf(ball);
+                this.update();
+            },
+            onDragEnd: animateBounce,
+            onDragEndParams: []
+        });
+
+        window.addEventListener("resize", () => {
+            vw = window.innerWidth;
+            vh = window.innerHeight;
+        });
+
+        function animateBounce(x = "+=0", y = "+=0", vx = "auto", vy = "auto") {
+
+            gsap.fromTo(ball, { x, y }, {
+                inertia: {
+                    x: vx,
+                    y: vy,
+                },
+                onUpdate: checkBounds
+            });
+        }
+
+        function checkBounds() {
+
+            let r = radius;
+            let x = ballProps("x");
+            let y = ballProps("y");
+            let vx = tracker.get("x");
+            let vy = tracker.get("y");
+            let xPos = x;
+            let yPos = y;
+
+            let hitting = false;
+
+            if (x + r > vw) {
+                xPos = vw - r;
+                vx *= friction;
+                hitting = true;
+
+            } else if (x - r < 0) {
+                xPos = r;
+                vx *= friction;
+                hitting = true;
+            }
+
+            if (y + r > vh) {
+                yPos = vh - r;
+                vy *= friction;
+                hitting = true;
+
+            } else if (y - r < 0) {
+                yPos = r;
+                vy *= friction;
+                hitting = true;
+            }
+
+            if (hitting) {
+                animateBounce(xPos, yPos, vx, vy);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
